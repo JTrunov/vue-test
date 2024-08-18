@@ -1,30 +1,85 @@
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav>
-  <router-view/>
+  <div class="app">
+    <h1>Страница с постами</h1>
+    <div class="app__buttons">
+      <my-button @click="showDialog">Создать новый пост</my-button>
+      <my-select v-model="selectedSort" :options="sortOptions"></my-select>
+    </div>
+
+    <my-dialog v-model:show="dialogVisible">
+      <post-form @create="createPost" />
+    </my-dialog>
+    <post-list v-if="!isPostsLoading" :posts="posts" @remove="removePost" />
+    <div v-else>Идет загрузка...</div>
+  </div>
 </template>
 
+<script>
+import axios from "axios";
+import PostForm from "./components/PostForm.vue";
+import PostList from "./components/PostList.vue";
+export default {
+  components: {
+    PostForm,
+    PostList,
+  },
+
+  data() {
+    return {
+      posts: [],
+      dialogVisible: false,
+      isPostsLoading: false,
+      selectedSort: "",
+      sortOptions: [
+        { value: "title", name: "По заголовку" },
+        { value: "body", name: "По содержанию" },
+      ],
+    };
+  },
+  methods: {
+    createPost(post) {
+      this.posts.push(post);
+    },
+    removePost(post) {
+      this.posts = this.posts.filter((p) => p.id !== post.id);
+    },
+    showDialog() {
+      this.dialogVisible = true;
+    },
+    async fetchPosts() {
+      try {
+        this.isPostsLoading = true;
+        const response = await axios.get(
+          "https://jsonplaceholder.typicode.com/posts?_limit=10"
+        );
+        this.posts = response.data;
+      } catch (error) {
+        alert("ошибка");
+      } finally {
+        this.isPostsLoading = false;
+      }
+    },
+  },
+  mounted() {
+    this.fetchPosts();
+  },
+};
+</script>
+
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-nav {
-  padding: 30px;
+.app {
+  padding: 20px;
 }
 
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
+.app__buttons {
+  margin: 15px 0;
+  display: flex;
+  justify-content: space-between;
 }
 </style>
